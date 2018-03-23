@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <logger name="org.springframework" level="ERROR"/>
+    <logger name="com.mkyong" level="DEBUG"/>
+    <logger name="org.mongodb" level="ERROR"/>
+</configuration>
