@@ -1,4 +1,4 @@
-package com.rmc.medals.request;
+package com.ag.grid.enterprise.spark.demo.request;
 
 import java.io.Serializable;
 import java.util.Objects;

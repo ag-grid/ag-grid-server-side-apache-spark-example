@@ -1,12 +1,12 @@
-package com.rmc.medals.service;
+package com.ag.grid.enterprise.spark.demo.service;
 
-import com.rmc.medals.filter.ColumnFilter;
-import com.rmc.medals.filter.NumberColumnFilter;
-import com.rmc.medals.filter.SetColumnFilter;
-import com.rmc.medals.request.ColumnVO;
-import com.rmc.medals.request.EnterpriseGetRowsRequest;
-import com.rmc.medals.request.SortModel;
-import com.rmc.medals.response.DataResult;
+import com.ag.grid.enterprise.spark.demo.filter.ColumnFilter;
+import com.ag.grid.enterprise.spark.demo.filter.NumberColumnFilter;
+import com.ag.grid.enterprise.spark.demo.filter.SetColumnFilter;
+import com.ag.grid.enterprise.spark.demo.request.ColumnVO;
+import com.ag.grid.enterprise.spark.demo.request.EnterpriseGetRowsRequest;
+import com.ag.grid.enterprise.spark.demo.request.SortModel;
+import com.ag.grid.enterprise.spark.demo.response.DataResult;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.spark.sql.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.Streams.zip;
-import static com.rmc.medals.util.JsonUtil.asString;
+import static com.ag.grid.enterprise.spark.demo.util.JsonUtil.asString;
 import static java.util.Arrays.copyOfRange;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -132,11 +132,13 @@ public class OlympicMedalsService {
 
         List<String> allCols = concat(groupCols, valCols).collect(toList());
 
-        return df.orderBy(sortModel.stream()
+        Column[] cols = sortModel.stream()
                 .map(model -> Pair.of(model.getColId(), model.getSort().equals("asc")))
                 .filter(p -> !isGrouping || allCols.contains(p.getKey()))
                 .map(p -> p.getValue() ? col(p.getKey()).asc() : col(p.getKey()).desc())
-                .toArray(Column[]::new));
+                .toArray(Column[]::new);
+
+        return df.orderBy(cols);
     }
 
     private DataResult paginate(Dataset<Row> df, int startRow, int endRow) {

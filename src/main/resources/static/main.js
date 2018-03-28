@@ -4,7 +4,7 @@ let columnDefs = [
     filter: 'agSetColumnFilter',
     filterParams: {
       values: params => agGrid.simpleHttpRequest({
-        url: 'http://localhost:9999/olympic-medals/getAthletes'
+        url: 'http://localhost:9090/olympic-medals/getAthletes'
       }).then(data => params.success(data)),
       newRowsAction: 'keep'
     },
@@ -17,7 +17,7 @@ let columnDefs = [
     field: "year",
     filter: 'agSetColumnFilter',
     filterParams: {
-      values: params => agGrid.simpleHttpRequest({url: 'http://localhost:9999/olympic-medals/getYears'})
+      values: params => agGrid.simpleHttpRequest({url: 'http://localhost:9090/olympic-medals/getYears'})
         .then(data => params.success(data)),
       newRowsAction: 'keep'
     },
@@ -28,7 +28,7 @@ let columnDefs = [
   },
   {
     headerName: "Sport", field: "sport", filter: 'agSetColumnFilter', filterParams: {
-      values: params => agGrid.simpleHttpRequest({url: 'http://localhost:9999/olympic-medals/getSports'})
+      values: params => agGrid.simpleHttpRequest({url: 'http://localhost:9090/olympic-medals/getSports'})
         .then(data => params.success(data)),
       newRowsAction: 'keep'
     },
@@ -70,7 +70,7 @@ EnterpriseDatasource.prototype.getRows = function (params) {
   console.log(jsonRequest);
 
   let httpRequest = new XMLHttpRequest();
-  httpRequest.open('POST', 'http://localhost:9999/olympic-medals/getData');
+  httpRequest.open('POST', 'http://localhost:9090/olympic-medals/getData');
   httpRequest.setRequestHeader("Content-type", "application/json");
   httpRequest.send(jsonRequest);
   httpRequest.onreadystatechange = () => {

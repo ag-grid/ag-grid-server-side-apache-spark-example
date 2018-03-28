@@ -1,4 +1,4 @@
-package com.rmc.medals.filter;
+package com.ag.grid.enterprise.spark.demo.filter;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;

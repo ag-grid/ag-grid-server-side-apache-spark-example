@@ -1,6 +1,6 @@
-package com.rmc.medals.util;
+package com.ag.grid.enterprise.spark.demo.util;
 
-import com.rmc.medals.response.DataResult;
+import com.ag.grid.enterprise.spark.demo.response.DataResult;
 
 import java.util.Arrays;
 import java.util.List;

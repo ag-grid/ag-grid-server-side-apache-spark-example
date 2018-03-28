@@ -1,4 +1,4 @@
-package com.rmc.medals.response;
+package com.ag.grid.enterprise.spark.demo.response;
 
 import java.util.List;
 import java.util.Map;

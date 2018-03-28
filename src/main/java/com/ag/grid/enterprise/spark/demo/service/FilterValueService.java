@@ -1,4 +1,4 @@
-package com.rmc.medals.service;
+package com.ag.grid.enterprise.spark.demo.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

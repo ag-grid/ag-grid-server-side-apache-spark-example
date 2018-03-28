@@ -1,4 +1,4 @@
-package com.rmc.medals.filter;
+package com.ag.grid.enterprise.spark.demo.filter;
 
 public class NumberColumnFilter extends ColumnFilter {
     private String type;

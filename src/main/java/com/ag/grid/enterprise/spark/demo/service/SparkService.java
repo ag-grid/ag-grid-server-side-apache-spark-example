@@ -1,4 +1,4 @@
-package com.rmc.medals.service;
+package com.ag.grid.enterprise.spark.demo.service;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Dataset;

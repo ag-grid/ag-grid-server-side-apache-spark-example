@@ -1,6 +1,6 @@
-package com.rmc.medals.request;
+package com.ag.grid.enterprise.spark.demo.request;
 
-import com.rmc.medals.filter.ColumnFilter;
+import com.ag.grid.enterprise.spark.demo.filter.ColumnFilter;
 
 import java.io.Serializable;
 import java.util.List;
