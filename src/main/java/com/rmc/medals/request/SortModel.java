@@ -45,12 +45,4 @@ public class SortModel implements Serializable {
 
         return Objects.hash(colId, sort);
     }
-
-    @Override
-    public String toString() {
-        return "SortModel{" +
-                "colId='" + colId + '\'' +
-                ", sort='" + sort + '\'' +
-                '}';
-    }
 }

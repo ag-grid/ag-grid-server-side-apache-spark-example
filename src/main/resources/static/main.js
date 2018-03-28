@@ -29,10 +29,7 @@ let columnDefs = [
   {
     headerName: "Sport", field: "sport", filter: 'agSetColumnFilter', filterParams: {
       values: params => agGrid.simpleHttpRequest({url: 'http://localhost:9999/olympic-medals/getSports'})
-        .then(data => {
-          console.log(data);
-          params.success(data)
-        }),
+        .then(data => params.success(data)),
       newRowsAction: 'keep'
     },
     enableRowGroup: true,
@@ -61,17 +58,13 @@ let gridOptions = {
   // bring back data 50 rows at a time
   cacheBlockSize: 100,
   rowGroupPanelShow: 'always',
-  pivotPanelShow: 'always',
-  animateRows: true,
-  // icons: {
-  //   groupLoading: '<img src="https://raw.githubusercontent.com/ag-grid/ag-grid-docs/master/src/javascript-grid-enterprise-model/spinner.gif" style="width:22px;height:22px;">'
-  // }
+  pivotPanelShow: 'always'
 };
 
 function EnterpriseDatasource() {}
 
 EnterpriseDatasource.prototype.getRows = function (params) {
-  let request = modifyRequestForSetFilters(modifyRequestForGroupColumnSorting(params.request));
+  let request = params.request;
 
   let jsonRequest = JSON.stringify(request, null, 2);
   console.log(jsonRequest);
@@ -96,39 +89,6 @@ document.addEventListener('DOMContentLoaded', function () {
   new agGrid.Grid(gridDiv, gridOptions);
   gridOptions.api.setEnterpriseDatasource(new EnterpriseDatasource());
 });
-
-let modifyRequestForSetFilters = function (request) {
-  request.filterModel = Object.keys(request.filterModel)
-    .reduce(function (previous, current) {
-      let currentFilter = request.filterModel[current];
-
-      // convert set filter to common filter model format
-      previous[current] = (currentFilter instanceof Array) ?
-        {filterType: 'set', filter: null, filterTo: null, values: currentFilter} : currentFilter;
-
-      return previous;
-    }, {});
-  return request;
-}
-
-let modifyRequestForGroupColumnSorting = function (request) {
-  let sortModel = request.sortModel;
-  let index = sortModel.findIndex(e => e.colId === 'ag-Grid-AutoColumn');
-
-  if (index > -1) {
-    let rowGroups = request.rowGroupCols.map(group => {
-      return {
-        colId: group.field,
-        sort: sortModel[index].sort
-      }
-    });
-
-    sortModel.splice.apply(sortModel, [index, 1].concat(rowGroups));
-  }
-
-  request.sortModel = sortModel;
-  return request;
-};
 
 let updateSecondaryColumns = function (request, result) {
   if (request.pivotMode && request.pivotCols.length > 0) {

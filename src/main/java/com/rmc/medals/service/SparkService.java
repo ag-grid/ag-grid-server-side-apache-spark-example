@@ -29,14 +29,6 @@ public class SparkService {
         dataFrame.createOrReplaceTempView("medals");
     }
 
-    public Dataset<Row> getDataFrame() {
-        return dataFrame;
-    }
-
-    public SparkSession getSparkSession() {
-        return sparkSession;
-    }
-
     public Dataset<Row> execute(String query) {
         return this.sparkSession.sql(query);
     }
@@ -45,10 +37,6 @@ public class SparkService {
         return new SparkConf()
                 .setAppName("OlympicMedals")
                 .setMaster("local")
-                .set("spark.executor.memory", "2g")
-                .set("spark.executor.instances", "5")
-                .set("spark.executor.cores", "5")
-                .set("spark.sql.shuffle.partitions", "1")
-                .set("spark.default.parallelism", "100");
+                .set("spark.sql.shuffle.partitions", "1");
     }
 }

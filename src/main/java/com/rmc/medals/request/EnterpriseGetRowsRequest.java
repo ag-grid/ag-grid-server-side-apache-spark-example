@@ -1,13 +1,17 @@
 package com.rmc.medals.request;
 
+import com.rmc.medals.filter.ColumnFilter;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+
 public class EnterpriseGetRowsRequest implements Serializable {
 
-    private int startRow;
-    private int endRow;
+    private int startRow, endRow;
 
     // row group columns
     private List<ColumnVO> rowGroupCols;
@@ -25,23 +29,18 @@ public class EnterpriseGetRowsRequest implements Serializable {
     private List<String> groupKeys;
 
     // if filtering, what the filter model is
-    private Map<String, FilterModel> filterModel;
+    private Map<String, ColumnFilter> filterModel;
 
     // if sorting, what the sort model is
     private List<SortModel> sortModel;
 
-    public EnterpriseGetRowsRequest() {}
-
-    public EnterpriseGetRowsRequest(int startRow, int endRow, List<ColumnVO> rowGroupCols, List<ColumnVO> valueCols, List<ColumnVO> pivotCols, boolean pivotMode, List<String> groupKeys, Map<String, FilterModel> filterModel, List<SortModel> sortModel) {
-        this.startRow = startRow;
-        this.endRow = endRow;
-        this.rowGroupCols = rowGroupCols;
-        this.valueCols = valueCols;
-        this.pivotCols = pivotCols;
-        this.pivotMode = pivotMode;
-        this.groupKeys = groupKeys;
-        this.filterModel = filterModel;
-        this.sortModel = sortModel;
+    public EnterpriseGetRowsRequest() {
+        this.rowGroupCols = emptyList();
+        this.valueCols = emptyList();
+        this.pivotCols = emptyList();
+        this.groupKeys = emptyList();
+        this.filterModel = emptyMap();
+        this.sortModel = emptyList();
     }
 
     public int getStartRow() {
@@ -100,11 +99,11 @@ public class EnterpriseGetRowsRequest implements Serializable {
         this.groupKeys = groupKeys;
     }
 
-    public Map<String, FilterModel> getFilterModel() {
+    public Map<String, ColumnFilter> getFilterModel() {
         return filterModel;
     }
 
-    public void setFilterModel(Map<String, FilterModel> filterModel) {
+    public void setFilterModel(Map<String, ColumnFilter> filterModel) {
         this.filterModel = filterModel;
     }
 

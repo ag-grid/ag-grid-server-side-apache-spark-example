@@ -1,8 +1,10 @@
 package com.rmc.medals.service;
 
+import com.rmc.medals.filter.ColumnFilter;
+import com.rmc.medals.filter.NumberColumnFilter;
+import com.rmc.medals.filter.SetColumnFilter;
 import com.rmc.medals.request.ColumnVO;
 import com.rmc.medals.request.EnterpriseGetRowsRequest;
-import com.rmc.medals.request.FilterModel;
 import com.rmc.medals.request.SortModel;
 import com.rmc.medals.response.DataResult;
 import org.apache.commons.lang3.tuple.Pair;
@@ -14,8 +16,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.Streams.zip;
@@ -39,14 +41,14 @@ public class OlympicMedalsService {
         put("greaterThanOrEqual", ">=");
     }};
 
-    @Autowired
-    private SparkService sparkService;
-
     private List<String> rowGroups, groupKeys;
     private List<ColumnVO> valueColumns, pivotColumns;
     private List<SortModel> sortModel;
-    private Map<String, FilterModel> filterModel;
+    private Map<String, ColumnFilter> filterModel;
     private boolean isGrouping, isPivotMode;
+
+    @Autowired
+    private SparkService sparkService;
 
     public DataResult getData(EnterpriseGetRowsRequest request) {
         rowGroups = request.getRowGroupCols().stream().map(ColumnVO::getField).collect(toList());
@@ -58,7 +60,7 @@ public class OlympicMedalsService {
         isPivotMode = request.isPivotMode();
         isGrouping = rowGroups.size() > groupKeys.size();
 
-        Dataset<Row> df = sparkService.execute(selectSql() + " from medals " + getFilters(filterModel));
+        Dataset<Row> df = sparkService.execute(selectSql() + " from medals " + getFilters());
 
         Dataset<Row> dataFrame = orderBy(groupBy(where(df)));
 
@@ -156,25 +158,43 @@ public class OlympicMedalsService {
                 .collect(toList());
     }
 
-    private String getFilters(Map<String, FilterModel> filterModel) {
-        Predicate<FilterModel> isSetFilter = fm -> fm.getFilterType().equals("set");
-        Predicate<FilterModel> isInRangeFilter = fm -> fm.getType() != null && fm.getType().equals("inRange");
+    private String getFilters() {
+        Function<Map.Entry<String, ColumnFilter>, String> applyFilters = entry -> {
+            String columnName = entry.getKey();
+            ColumnFilter filter = entry.getValue();
 
-        Function<FilterModel, String> setFilter = fm -> fm.getValues().isEmpty() ? " IN ('') " : " IN " + asString(fm.getValues());
-        Function<FilterModel, String> inRangeFilter = fm -> " BETWEEN " + fm.getFilter() + " AND " + fm.getFilterTo();
-        Function<FilterModel, String> regularFilter = fm -> " " + operatorMap.get(fm.getType()) + " " + fm.getFilter();
+            if (filter instanceof SetColumnFilter) {
+                return setFilter().apply(columnName, (SetColumnFilter) filter);
+            }
 
-        Function<Map.Entry<String, FilterModel>, String> filters = entry -> entry.getKey() +
-                (isSetFilter.test(entry.getValue()) ? setFilter.apply(entry.getValue()) :
-                        isInRangeFilter.test(entry.getValue()) ? inRangeFilter.apply(entry.getValue()) :
-                                regularFilter.apply(entry.getValue()));
+            if (filter instanceof NumberColumnFilter) {
+                return numberFilter().apply(columnName, (NumberColumnFilter) filter);
+            }
 
-        String filterSql = filterModel
-                .entrySet()
+            return "";
+        };
+
+        String filterSql = filterModel.entrySet()
                 .stream()
-                .map(filters)
+                .map(applyFilters)
                 .collect(joining(" AND "));
 
         return filterSql.isEmpty() ? "" : "WHERE " + filterSql;
+    }
+
+    private BiFunction<String, SetColumnFilter, String> setFilter() {
+        return (String columnName, SetColumnFilter filter) ->
+                columnName + (filter.getValues().isEmpty() ? " IN ('') " : " IN " + asString(filter.getValues()));
+    }
+
+    private BiFunction<String, NumberColumnFilter, String> numberFilter() {
+        return (String columnName, NumberColumnFilter filter) -> {
+            Integer filterValue = filter.getFilter();
+            String filerType = filter.getType();
+            String operator = operatorMap.get(filerType);
+
+            return columnName + (filerType.equals("inRange") ?
+                    " BETWEEN " + filterValue + " AND " + filter.getFilterTo() : " " + operator + " " + filterValue);
+        };
     }
 }

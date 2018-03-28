@@ -1,6 +1,5 @@
 package com.rmc.medals.controller;
 
-import com.rmc.medals.model.Test;
 import com.rmc.medals.request.EnterpriseGetRowsRequest;
 import com.rmc.medals.response.DataResult;
 import com.rmc.medals.service.FilterValueService;
@@ -9,10 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 
 import static com.rmc.medals.util.JsonUtil.asJsonArr;
 import static com.rmc.medals.util.JsonUtil.asJsonResponse;
@@ -21,7 +22,7 @@ import static com.rmc.medals.util.JsonUtil.asJsonResponse;
 public class OlympicMedalsController {
 
     @Autowired
-    JdbcTemplate template;
+    private JdbcTemplate template;
 
     @Autowired
     private OlympicMedalsService medalsService;
@@ -32,26 +33,9 @@ public class OlympicMedalsController {
     @RequestMapping(method = RequestMethod.POST, value = "/olympic-medals/getData")
     public ResponseEntity<String> getData(@RequestBody EnterpriseGetRowsRequest request) {
 
-        long before = System.currentTimeMillis();
         DataResult data = medalsService.getData(request);
-        long after = System.currentTimeMillis();
-
-        System.out.println(">>>> getData() took " + (after-before) + "ms");
 
         return new ResponseEntity<>(asJsonResponse(data), HttpStatus.OK);
-    }
-
-    @RequestMapping(method = RequestMethod.GET, value = "/olympic-medals/getAll")
-    public ResponseEntity getAllItems(){
-
-        List<Map<String, Object>> maps = template.queryForList("select * from test");
-
-        List<Test> items = template.query(
-                "select name from test",
-                (result, rowNum) -> new Test(result.getString("name"))
-        );
-
-        return new ResponseEntity(items, HttpStatus.OK);
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/olympic-medals/getAthletes")
