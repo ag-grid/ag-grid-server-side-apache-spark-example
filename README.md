@@ -1,5 +1,4 @@
-![#f03c15](https://placehold.it/15/f03c15/000000?text=+) `This project requires ag-grid-enterprise v18 which has not been released yet`
-
+<span style="color:red">This project requires ag-grid-enterprise v18 which has not been released yet</span>
 # ag-Grid Server-Side Apache Spark Example
 
 A reference implementation showing how to perform server-side operations using Apache Spark with ag-Grid.
