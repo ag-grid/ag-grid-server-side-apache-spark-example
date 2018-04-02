@@ -1,7 +1,7 @@
 let columnDefs = [
   { field: "athlete", filter: 'text', enableRowGroup: true, enablePivot: false },
   { field: "age", enableRowGroup: true, enablePivot: false },
-  { field: "country", enableRowGroup: true, rowGroup: true, enablePivot: true, hide: true },
+  { field: "country", enableRowGroup: true, rowGroup: true, enablePivot: false, hide: true },
   { field: "year", filter: 'number', enableRowGroup: true, rowGroup: true, enablePivot: false, hide: true },
   {
     headerName: "Sport", field: "sport", filter: 'agSetColumnFilter',
