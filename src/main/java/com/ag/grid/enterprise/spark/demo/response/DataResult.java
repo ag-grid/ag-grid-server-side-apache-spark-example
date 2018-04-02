@@ -4,10 +4,10 @@ import java.util.List;
 
 public class DataResult {
     private List<String> data;
-    private int lastRow;
+    private long lastRow;
     private List<String> secondaryColumns;
 
-    public DataResult(List<String> data, int lastRow, List<String> secondaryColumns) {
+    public DataResult(List<String> data, long lastRow, List<String> secondaryColumns) {
         this.data = data;
         this.lastRow = lastRow;
         this.secondaryColumns = secondaryColumns;
@@ -21,11 +21,11 @@ public class DataResult {
         this.data = data;
     }
 
-    public int getLastRow() {
+    public long getLastRow() {
         return lastRow;
     }
 
-    public void setLastRow(int lastRow) {
+    public void setLastRow(long lastRow) {
         this.lastRow = lastRow;
     }
 

@@ -1,4 +1,4 @@
-package com.ag.grid.enterprise.spark.demo.service;
+package com.ag.grid.enterprise.spark.demo.dao;
 
 import com.ag.grid.enterprise.spark.demo.filter.ColumnFilter;
 import com.ag.grid.enterprise.spark.demo.filter.NumberColumnFilter;
@@ -8,21 +8,25 @@ import com.ag.grid.enterprise.spark.demo.request.EnterpriseGetRowsRequest;
 import com.ag.grid.enterprise.spark.demo.request.SortModel;
 import com.ag.grid.enterprise.spark.demo.response.DataResult;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.sql.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.spark.sql.types.StructType;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
+import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.Streams.zip;
-import static com.ag.grid.enterprise.spark.demo.util.JsonUtil.asString;
 import static java.util.Arrays.copyOfRange;
+import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
@@ -30,25 +34,35 @@ import static org.apache.spark.sql.functions.col;
 import static org.apache.spark.sql.functions.sum;
 
 @Service
-public class OlympicMedalsService {
-
-    private static Map<String, String> operatorMap = new HashMap<String, String>() {{
-        put("equals", "=");
-        put("notEqual", "<>");
-        put("lessThan", "<");
-        put("lessThanOrEqual", "<=");
-        put("greaterThan", ">");
-        put("greaterThanOrEqual", ">=");
-    }};
-
+public class OlympicMedalDao {
     private List<String> rowGroups, groupKeys;
     private List<ColumnVO> valueColumns, pivotColumns;
     private List<SortModel> sortModel;
     private Map<String, ColumnFilter> filterModel;
     private boolean isGrouping, isPivotMode;
 
-    @Autowired
-    private SparkService sparkService;
+    private SparkSession sparkSession;
+
+    @PostConstruct
+    public void init() {
+        SparkConf sparkConf = new SparkConf()
+                .setAppName("OlympicMedals")
+                .setMaster("local[*]")
+                .set("spark.sql.shuffle.partitions", "1");
+
+        this.sparkSession = SparkSession.builder()
+                .config(sparkConf)
+                .getOrCreate();
+
+        Dataset<Row> dataFrame = this.sparkSession.read()
+                .option("header", "true")
+                .option("inferSchema", "true")
+                .csv("src/main/resources/data/result.csv");
+
+        dataFrame.cache();
+
+        dataFrame.createOrReplaceTempView("medals");
+    }
 
     public DataResult getData(EnterpriseGetRowsRequest request) {
         rowGroups = request.getRowGroupCols().stream().map(ColumnVO::getField).collect(toList());
@@ -60,11 +74,11 @@ public class OlympicMedalsService {
         isPivotMode = request.isPivotMode();
         isGrouping = rowGroups.size() > groupKeys.size();
 
-        Dataset<Row> df = sparkService.execute(selectSql() + " from medals " + getFilters());
+        Dataset<Row> df = sparkSession.sql(selectSql() + " from medals ");
 
-        Dataset<Row> dataFrame = orderBy(groupBy(where(df)));
+        Dataset<Row> results = orderBy(groupBy(filter(df)));
 
-        return paginate(dataFrame, request.getStartRow(), request.getEndRow());
+        return paginate(results, request.getStartRow(), request.getEndRow());
     }
 
     private String selectSql() {
@@ -82,14 +96,6 @@ public class OlympicMedalsService {
         return "select " + concat(groupCols, concat(pivotCols, valCols)).collect(joining(","));
     }
 
-    private Dataset<Row> where(Dataset<Row> df) {
-        String whereClause = zip(groupKeys.stream(), rowGroups.stream(),
-                (key, group) -> group + " = '" + key + "'")
-                .collect(joining(" AND "));
-
-        return groupKeys.isEmpty() ? df : df.filter(whereClause);
-    }
-
     private Dataset<Row> groupBy(Dataset<Row> df) {
         if (!isGrouping) return df;
 
@@ -101,18 +107,19 @@ public class OlympicMedalsService {
         return agg(pivot(df.groupBy(groups)));
     }
 
-    private RelationalGroupedDataset pivot(RelationalGroupedDataset df) {
-        if (!isPivotMode || pivotColumns.isEmpty()) return df;
+    private RelationalGroupedDataset pivot(RelationalGroupedDataset groupedDf) {
+        if (!isPivotMode) return groupedDf;
 
-        List<String> pivots = pivotColumns.stream()
+        // spark sql only supports a single pivot column
+        Optional<String> pivotColumn = pivotColumns.stream()
                 .map(ColumnVO::getField)
-                .collect(toList());
+                .findFirst();
 
-        return df.pivot(pivots.get(0));
+        return pivotColumn.map(groupedDf::pivot).orElse(groupedDf);
     }
 
-    private Dataset<Row> agg(RelationalGroupedDataset df) {
-        if (valueColumns.isEmpty()) return df.count();
+    private Dataset<Row> agg(RelationalGroupedDataset groupedDf) {
+        if (valueColumns.isEmpty()) return groupedDf.count();
 
         Column[] aggCols = valueColumns
                 .stream()
@@ -120,7 +127,7 @@ public class OlympicMedalsService {
                 .map(field -> sum(field).alias(field))
                 .toArray(Column[]::new);
 
-        return df.agg(aggCols[0], copyOfRange(aggCols, 1, aggCols.length));
+        return groupedDf.agg(aggCols[0], copyOfRange(aggCols, 1, aggCols.length));
     }
 
     private Dataset<Row> orderBy(Dataset<Row> df) {
@@ -141,27 +148,8 @@ public class OlympicMedalsService {
         return df.orderBy(cols);
     }
 
-    private DataResult paginate(Dataset<Row> df, int startRow, int endRow) {
-        List<String> allResults = df.toJSON().collectAsList();
-
-        List<String> paginatedResults = allResults.stream()
-                .skip(startRow)
-                .limit(endRow - startRow)
-                .collect(toList());
-
-        int lastRow = endRow >= allResults.size() ? allResults.size() : -1;
-
-        return new DataResult(paginatedResults, lastRow, getSecondaryColumns(df));
-    }
-
-    private List<String> getSecondaryColumns(Dataset<Row> df) {
-        return Arrays.stream(df.schema().fieldNames())
-                .filter(f -> !rowGroups.contains(f)) // filter out group fields
-                .collect(toList());
-    }
-
-    private String getFilters() {
-        Function<Map.Entry<String, ColumnFilter>, String> applyFilters = entry -> {
+    private Dataset<Row> filter(Dataset<Row> df) {
+        Function<Map.Entry<String, ColumnFilter>, String> applyColumnFilters = entry -> {
             String columnName = entry.getKey();
             ColumnFilter filter = entry.getValue();
 
@@ -176,12 +164,17 @@ public class OlympicMedalsService {
             return "";
         };
 
-        String filterSql = filterModel.entrySet()
+        Stream<String> columnFilters = filterModel.entrySet()
                 .stream()
-                .map(applyFilters)
+                .map(applyColumnFilters);
+
+        Stream<String> groupToFilter = zip(groupKeys.stream(), rowGroups.stream(),
+                (key, group) -> group + " = '" + key + "'");
+
+        String filters = concat(columnFilters, groupToFilter)
                 .collect(joining(" AND "));
 
-        return filterSql.isEmpty() ? "" : "WHERE " + filterSql;
+        return filters.isEmpty() ? df : df.filter(filters);
     }
 
     private BiFunction<String, SetColumnFilter, String> setFilter() {
@@ -199,4 +192,50 @@ public class OlympicMedalsService {
                     " BETWEEN " + filterValue + " AND " + filter.getFilterTo() : " " + operator + " " + filterValue);
         };
     }
+
+    private DataResult paginate(Dataset<Row> df, int startRow, int endRow) {
+        // save schema to recreate data frame
+        StructType schema = df.schema();
+
+        // obtain row count
+        long rowCount = df.count();
+
+        // convert data frame to RDD and introduce a row index so we can filter results by range
+        JavaPairRDD<Row, Long> zippedRows = df.toJavaRDD().zipWithIndex();
+
+        // filter rows by row index using the requested range (startRow, endRow), this ensures we don't run out of memory
+        JavaRDD<Row> filteredRdd =
+                zippedRows.filter(pair -> pair._2 >= startRow && pair._2 <= endRow).map(pair -> pair._1);
+
+        // collect paginated results into a list of json objects
+        List<String> paginatedResults = sparkSession.sqlContext()
+                .createDataFrame(filteredRdd, schema)
+                .toJSON()
+                .collectAsList();
+
+        // calculate last row
+        long lastRow = endRow >= rowCount ? rowCount : -1;
+
+        return new DataResult(paginatedResults, lastRow, getSecondaryColumns(df));
+    }
+
+    private List<String> getSecondaryColumns(Dataset<Row> df) {
+        return stream(df.schema().fieldNames())
+                .filter(f -> !rowGroups.contains(f)) // filter out group fields
+                .collect(toList());
+    }
+
+    private String asString(List<String> l) {
+        Function<String, String> addQuotes = s -> "\"" + s + "\"";
+        return "(" + l.stream().map(addQuotes).collect(joining(", ")) + ")";
+    }
+
+    private static Map<String, String> operatorMap = new HashMap<String, String>() {{
+        put("equals", "=");
+        put("notEqual", "<>");
+        put("lessThan", "<");
+        put("lessThanOrEqual", "<=");
+        put("greaterThan", ">");
+        put("greaterThanOrEqual", ">=");
+    }};
 }

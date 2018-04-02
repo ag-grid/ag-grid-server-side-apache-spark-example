@@ -1,47 +1,33 @@
 let columnDefs = [
-  {
-    field: "athlete",
-    filter: 'agSetColumnFilter',
-    filterParams: {
-      values: params => agGrid.simpleHttpRequest({
-        url: 'http://localhost:9090/olympic-medals/getAthletes'
-      }).then(data => params.success(data)),
-      newRowsAction: 'keep'
-    },
-    enableRowGroup: true,
-    enablePivot: true,
-  },
-  { field: "age", enableRowGroup: true, enablePivot: true },
+  { field: "athlete", filter: 'text', enableRowGroup: true, enablePivot: false },
+  { field: "age", enableRowGroup: true, enablePivot: false },
   { field: "country", enableRowGroup: true, rowGroup: true, enablePivot: true, hide: true },
+  { field: "year", filter: 'number', enableRowGroup: true, rowGroup: true, enablePivot: false, hide: true },
   {
-    field: "year",
-    filter: 'agSetColumnFilter',
+    headerName: "Sport", field: "sport", filter: 'agSetColumnFilter',
     filterParams: {
-      values: params => agGrid.simpleHttpRequest({url: 'http://localhost:9090/olympic-medals/getYears'})
-        .then(data => params.success(data)),
-      newRowsAction: 'keep'
-    },
-    enableRowGroup: true,
-    enablePivot: true,
-    // rowGroup: true,
-    hide: true
-  },
-  {
-    headerName: "Sport", field: "sport", filter: 'agSetColumnFilter', filterParams: {
-      values: params => agGrid.simpleHttpRequest({url: 'http://localhost:9090/olympic-medals/getSports'})
-        .then(data => params.success(data)),
+      values: ["Speed Skating", "Cross Country Skiing", "Diving", "Biathlon", "Ski Jumping", "Nordic Combined", "Athletics", "Table Tennis", "Tennis", "Synchronized Swimming", "Rowing", "Equestrian", "Canoeing", "Badminton", "Weightlifting", "Waterpolo", "Triathlon", "Taekwondo", "Softball", "Snowboarding", "Sailing", "Modern Pentathlon", "Ice Hockey", "Hockey", "Football", "Freestyle Skiing", "Curling", "Beach Volleyball", "Swimming", "Gymnastics", "Short-Track Speed Skating", "Cycling", "Alpine Skiing", "Shooting", "Fencing", "Bobsleigh", "Archery", "Wrestling", "Volleyball", "Trampoline", "Skeleton", "Rhythmic Gymnastics", "Luge", "Judo", "Handball", "Figure Skating", "Baseball", "Boxing", "Basketball"],
       newRowsAction: 'keep'
     },
     enableRowGroup: true,
     enablePivot: true
   },
-  { field: "gold", enableValue: true, aggFunc: 'sum' },
-  { field: "silver", enableValue: true, aggFunc: 'sum' },
-  { field: "bronze", enableValue: true, aggFunc: 'sum' },
-  { field: "total", enableValue: true, aggFunc: 'sum' }
+  { field: "gold", type: "measure" },
+  { field: "silver", type: "measure" },
+  { field: "bronze", type: "measure" },
+  { field: "total", type: "measure" }
 ];
 
 let gridOptions = {
+  columnTypes: {
+    measure: {
+      width: 150,
+      enableValue: true,
+      aggFunc: 'sum',
+      allowedAggFuncs: ['sum']
+    }
+  },
+
   defaultColDef: {
     width: 180,
     filter: "agNumberColumnFilter",
@@ -70,7 +56,7 @@ EnterpriseDatasource.prototype.getRows = function (params) {
   console.log(jsonRequest);
 
   let httpRequest = new XMLHttpRequest();
-  httpRequest.open('POST', 'http://localhost:9090/olympic-medals/getData');
+  httpRequest.open('POST', 'http://localhost:9090/getRows');
   httpRequest.setRequestHeader("Content-type", "application/json");
   httpRequest.send(jsonRequest);
   httpRequest.onreadystatechange = () => {
