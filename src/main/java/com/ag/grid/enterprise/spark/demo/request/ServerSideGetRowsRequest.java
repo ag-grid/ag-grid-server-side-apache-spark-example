@@ -9,7 +9,7 @@ import java.util.Map;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
-public class EnterpriseGetRowsRequest implements Serializable {
+public class ServerSideGetRowsRequest implements Serializable {
 
     private int startRow, endRow;
 
@@ -34,7 +34,7 @@ public class EnterpriseGetRowsRequest implements Serializable {
     // if sorting, what the sort model is
     private List<SortModel> sortModel;
 
-    public EnterpriseGetRowsRequest() {
+    public ServerSideGetRowsRequest() {
         this.rowGroupCols = emptyList();
         this.valueCols = emptyList();
         this.pivotCols = emptyList();

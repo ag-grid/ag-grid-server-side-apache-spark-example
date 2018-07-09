@@ -4,7 +4,7 @@ import com.ag.grid.enterprise.spark.demo.filter.ColumnFilter;
 import com.ag.grid.enterprise.spark.demo.filter.NumberColumnFilter;
 import com.ag.grid.enterprise.spark.demo.filter.SetColumnFilter;
 import com.ag.grid.enterprise.spark.demo.request.ColumnVO;
-import com.ag.grid.enterprise.spark.demo.request.EnterpriseGetRowsRequest;
+import com.ag.grid.enterprise.spark.demo.request.ServerSideGetRowsRequest;
 import com.ag.grid.enterprise.spark.demo.request.SortModel;
 import com.ag.grid.enterprise.spark.demo.response.DataResult;
 import org.apache.commons.lang3.tuple.Pair;
@@ -64,7 +64,7 @@ public class OlympicMedalDao {
         dataFrame.createOrReplaceTempView("medals");
     }
 
-    public DataResult getData(EnterpriseGetRowsRequest request) {
+    public DataResult getData(ServerSideGetRowsRequest request) {
         rowGroups = request.getRowGroupCols().stream().map(ColumnVO::getField).collect(toList());
         groupKeys = request.getGroupKeys();
         valueColumns = request.getValueCols();

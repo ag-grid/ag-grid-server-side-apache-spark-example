@@ -1,7 +1,7 @@
 package com.ag.grid.enterprise.spark.demo.controller;
 
 import com.ag.grid.enterprise.spark.demo.dao.OlympicMedalDao;
-import com.ag.grid.enterprise.spark.demo.request.EnterpriseGetRowsRequest;
+import com.ag.grid.enterprise.spark.demo.request.ServerSideGetRowsRequest;
 import com.ag.grid.enterprise.spark.demo.response.DataResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,7 +18,7 @@ public class OlympicMedalsController {
     private OlympicMedalDao medalDao;
 
     @RequestMapping(method = RequestMethod.POST, value = "/getRows")
-    public ResponseEntity<String> getRows(@RequestBody EnterpriseGetRowsRequest request) {
+    public ResponseEntity<String> getRows(@RequestBody ServerSideGetRowsRequest request) {
         DataResult data = medalDao.getData(request);
         return new ResponseEntity<>(asJsonResponse(data), HttpStatus.OK);
     }
